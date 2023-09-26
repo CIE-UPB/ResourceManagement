@@ -1,0 +1,51 @@
+version: "3.8"
+
+networks:
+  cie-service:
+    name: cie-service
+    external: false
+
+services:
+  cie-service:
+    container_name: cie-service
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - cie-service
+    depends_on:
+      - postgresql
+    entrypoint:
+      [
+        "/service-bin/wait-for.sh",
+        "postgresql:5432",
+        "--",
+        "/service-bin/api",
+        ":$SERVER_PORT",
+      ]
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    restart: always
+    environment:
+      DATABASE_HOST: 127.0.0.1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cie-db
+    ports:
+      - "5432:5432"
+    networks:
+      - cie-service
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgresql
+    networks:
+      - cie-service
